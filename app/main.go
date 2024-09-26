@@ -33,24 +33,21 @@ func main() {
 			fmt.Println("Failed to read integer:", err)
 			return
 		}
-		buffer := make([]byte, pageSize)
-		_, err = databaseFile.ReadAt(buffer, 0)
+		buffer := make([]byte, 1)
+		_, err = databaseFile.Read(buffer)
 		if err != nil {
 			log.Fatal(err)
 		}
-		var startIndex uint16
-		if err := binary.Read(bytes.NewReader(buffer[105:107]), binary.BigEndian, &startIndex); err != nil {
-			fmt.Println("Failed to read integer:", err)
-			return
-		}
-		searchBuffer := []byte{67, 82, 69, 65, 84, 69}
-		var table = 0
-		for i := startIndex; i < pageSize-uint16(len(searchBuffer)); i++ {
-			slice := buffer[i : i+uint16(len(searchBuffer))]
-			if bytes.Equal(slice, searchBuffer) {
-				table++
+		var table uint16
+		if buffer[0] == 10 || buffer[0] == 13 {
+			buffer = make([]byte, 7)
+			_, err = databaseFile.Read(buffer)
+			if err != nil {
+				log.Fatal(err)
 			}
+			table = (uint16(buffer[2]) << 8) | uint16(buffer[3])
 		}
+
 		fmt.Printf("database page size: %v\n", pageSize)
 		fmt.Printf("number of tables: %v\n", table)
 	default:
