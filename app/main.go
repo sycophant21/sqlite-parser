@@ -34,15 +34,19 @@ func main() {
 			return
 		}
 		buffer := make([]byte, pageSize)
-		_, err = databaseFile.Read(buffer)
+		_, err = databaseFile.ReadAt(buffer, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
+		var startIndex uint16
+		if err := binary.Read(bytes.NewReader(buffer[105:107]), binary.BigEndian, &startIndex); err != nil {
+			fmt.Println("Failed to read integer:", err)
+			return
+		}
 		searchBuffer := []byte{67, 82, 69, 65, 84, 69}
-
-		var table int = 0
-		for i := 0; i < int(pageSize)-len(searchBuffer); i++ {
-			slice := buffer[i : i+len(searchBuffer)]
+		var table = 0
+		for i := startIndex; i < pageSize-uint16(len(searchBuffer)); i++ {
+			slice := buffer[i : i+uint16(len(searchBuffer))]
 			if bytes.Equal(slice, searchBuffer) {
 				table++
 			}
