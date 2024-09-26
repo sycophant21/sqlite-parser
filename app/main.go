@@ -10,7 +10,6 @@ import (
 	// "github.com/xwb1989/sqlparser"
 )
 
-// Usage: your_program.sh sample.db .dbinfo
 func main() {
 	databaseFilePath := os.Args[1]
 	command := os.Args[2]
@@ -34,11 +33,22 @@ func main() {
 			fmt.Println("Failed to read integer:", err)
 			return
 		}
-		// You can use print statements as follows for debugging, they'll be visible when running tests.
-		fmt.Println("Logs from your program will appear here!")
+		buffer := make([]byte, pageSize)
+		_, err = databaseFile.Read(buffer)
+		if err != nil {
+			log.Fatal(err)
+		}
+		searchBuffer := []byte{67, 82, 69, 65, 84, 69}
 
-		// Uncomment this to pass the first stage
-		fmt.Printf("database page size: %v", pageSize)
+		var table int = 0
+		for i := 0; i < int(pageSize)-len(searchBuffer); i++ {
+			slice := buffer[i : i+len(searchBuffer)]
+			if bytes.Equal(slice, searchBuffer) {
+				table++
+			}
+		}
+		fmt.Printf("database page size: %v\n", pageSize)
+		fmt.Printf("number of tables: %v\n", table)
 	default:
 		fmt.Println("Unknown command", command)
 		os.Exit(1)
