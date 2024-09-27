@@ -15,16 +15,19 @@ import (
 func main() {
 	databaseFilePath := os.Args[1]
 	command := os.Args[2]
-
+	page := getPageFromFile(databaseFilePath)
 	switch command {
 	case ".dbinfo":
-		handleDBInfo(databaseFilePath)
+		handleDBInfo(page)
+	case ".tables":
+		handleDotTablesCommand(page, handleDBInfo(page))
 	default:
 		fmt.Println("Unknown command", command)
 		os.Exit(1)
 	}
 }
-func handleDBInfo(filePath string) {
+
+func getPageFromFile(filePath string) []byte {
 	var file = openDBFile(filePath)
 	var header = getFileHeader(file)
 	pageSizeInfoSlice, err := getPageSizeInfoSlice(header)
@@ -39,7 +42,16 @@ func handleDBInfo(filePath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return page
+}
+func handleDBInfo(page []byte) uint16 {
 	numberOfTables := getNumberOfTables(page[100:108])
+	fmt.Printf("database page size: %v\n", len(page))
+	fmt.Printf("number of tables: %v\n", numberOfTables)
+	return numberOfTables
+}
+
+func handleDotTablesCommand(page []byte, numberOfTables uint16) {
 	tblAddrs := getTableInfoAddr(numberOfTables, page)
 	tables := make([]string, 0)
 	for _, el := range tblAddrs {
